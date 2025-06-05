@@ -1,5 +1,5 @@
-# VR180 Web Player
-A web-based video player for 180 degree, 3D video.
+# Spatial Player 
+A web-based video player for Spatial Video.
 
 Got an immersive video you want people to see with the Apple Vision Pro or Meta Quest headsets? You could build an app and deal with corporate policies and rejections. You can put it on YouTube but it will be limited to 4k and Meta headsets. Or, now, you can use this web player and put it on your website.
 
