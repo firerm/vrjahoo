@@ -37,9 +37,5 @@ Tapping anywhere will bring up the controls. Without interaction they will go aw
 - Seek
 - Exit VR
 
-## Future
-I'm not a developer. I used Google's Gemini to help create this and give me the ability to post immersive videos on my website. I'm unlikely to be able to help you if you run into problems, want to customize this, or add new features. I'm releasing this with the [unlicense](https://unlicense.org/) so you're free to do anything at all with it. That said, if you have ideas or want to contribute code, I'd love to [hear](mailto:hello@michaelverdi.com) from you.
-
 ## Demo
-**Test it out in a headset!**
-Open [https://exp.michaelverdi.com/vr180web](https://exp.michaelverdi.com/vr180web) in browser on your headset and then click the Enter VR button.
+Soon 
