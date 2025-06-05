@@ -26,7 +26,7 @@ Once the video is playing, you can bring up video controls. When the video is ov
 ![vr180-web-player](https://github.com/user-attachments/assets/ac86dba9-add9-462e-9590-26abc5f20912)
 
 ## Video Format
-**The player only supports 2:1, side-by-side video using either H.264 or HEVC in an mp4 file.** It does not support over-under, MV-HEVC, or .aivu.
+**The player only supports 2:1, side-by-side video using either H.264 or HEVC in an mp4 file by default.** It does not support over-under. MV-HEVC (Apple spatial video) files are converted at runtime using ffmpeg.wasm so they can play in the same player.
 
 ## Features
 Tapping anywhere will bring up the controls. Without interaction they will go away in 10 seconds. Tapping outside of the controls will close them right away.

@@ -74,12 +74,34 @@ let vrExitButtonMesh;
 let vrVolumeButtonMesh, vrVolumeButtonCanvas, vrVolumeButtonContext, vrVolumeButtonTexture;
 const VR_BUTTON_TEXTURE_SIZE = 128;
 
+// If the video source is an MV-HEVC (.mov or .aivu) file, convert it to
+// side-by-side MP4 using ffmpeg.wasm and replace the source in the video element.
+async function convertMVHEVCIfNeeded(videoEl) {
+    const sourceEl = videoEl.querySelector('source');
+    if (!sourceEl) return;
+    const srcUrl = sourceEl.getAttribute('src') || '';
+    if (!srcUrl.endsWith('.mov') && !srcUrl.endsWith('.aivu')) return;
+    const { createFFmpeg, fetchFile } = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.3/dist/ffmpeg.min.js');
+    const ffmpeg = createFFmpeg({
+        corePath: 'https://unpkg.com/@ffmpeg/core@0.12.3/dist/ffmpeg-core.js',
+        log: true
+    });
+    await ffmpeg.load();
+    const fileData = await fetchFile(srcUrl);
+    ffmpeg.FS('writeFile', 'input.mov', fileData);
+    await ffmpeg.run('-i', 'input.mov', '-filter_complex', '[0:v:0][0:v:1]hstack=inputs=2', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', 'output.mp4');
+    const data = ffmpeg.FS('readFile', 'output.mp4');
+    const blob = new Blob([data.buffer], { type: 'video/mp4' });
+    const blobUrl = URL.createObjectURL(blob);
+    sourceEl.src = blobUrl;
+}
+
 // SVG Path Data for Icons
 const SOUND_ON_SVG_PATH = "M13.4844 0.956299C13.766 0.689292 14.2002 0.683249 14.4883 0.930908L14.5439 0.984619L14.9326 1.41431C18.8143 5.92858 18.6845 12.6488 14.5439 17.0159C14.259 17.3163 13.7849 17.329 13.4844 17.0442C13.1838 16.7592 13.1712 16.2852 13.4561 15.9846C17.0653 12.178 17.1776 6.32534 13.7939 2.39087L13.4561 2.01587L13.4062 1.95825C13.1736 1.6574 13.2025 1.22361 13.4844 0.956299ZM6.9082 2.89868C7.71642 2.4576 8.75 3.03449 8.75 4.00024V14.0002C8.74986 15.0302 7.57399 15.6181 6.75 15.0002L3.64746 12.6731L1.10449 11.8254C0.594287 11.6552 0.250089 11.1777 0.25 10.6399V7.3606C0.250012 6.82269 0.59426 6.34529 1.10449 6.17505L3.64746 5.32642L6.75 3.00024L6.9082 2.89868ZM12.6172 4.35474C12.9512 4.15679 13.3767 4.24825 13.6025 4.55396L13.6455 4.61743L13.7812 4.85864C14.4372 6.07858 14.75 7.55417 14.75 9.00024C14.75 10.5428 14.3943 12.1195 13.6455 13.3831C13.4343 13.7391 12.9734 13.8568 12.6172 13.6458C12.2611 13.4346 12.1435 12.9737 12.3545 12.6174C12.9389 11.6312 13.25 10.3324 13.25 9.00024C13.25 7.75133 12.9766 6.53179 12.4609 5.57153L12.3545 5.38306L12.3193 5.3147C12.1595 4.96983 12.2833 4.55281 12.6172 4.35474ZM4.51465 6.552C4.40729 6.63245 4.28743 6.69512 4.16016 6.73755L1.75 7.54028V10.4592L4.16016 11.2629C4.25561 11.2948 4.34674 11.3383 4.43164 11.3918L4.51465 11.4485L7.25 13.4993V4.50024L4.51465 6.552ZM10.1699 7.46997C10.4445 7.1954 10.8793 7.17791 11.1738 7.41821L11.2305 7.46997L11.377 7.63501C11.6931 8.03702 11.8252 8.54177 11.8252 9.00024C11.8252 9.52404 11.6529 10.1081 11.2305 10.5305C10.9376 10.8233 10.4628 10.8232 10.1699 10.5305C9.87703 10.2376 9.87703 9.76286 10.1699 9.46997C10.2474 9.39246 10.3252 9.22626 10.3252 9.00024C10.3252 8.83065 10.2811 8.69473 10.2266 8.60474L10.1699 8.53052L10.1182 8.47388C9.87786 8.1793 9.89532 7.74457 10.1699 7.46997Z";
 const SOUND_MUTED_SVG_PATH = "M6.9082 2.8985C7.71639 2.45747 8.74994 3.03437 8.75 4.00006V14.0001C8.75 15.0301 7.57405 15.6181 6.75 15.0001L3.64746 12.6729L1.10449 11.8253C0.594245 11.655 0.250012 11.1776 0.25 10.6397V7.36041C0.25005 6.82252 0.594258 6.34508 1.10449 6.17486L3.64746 5.32623L6.75 3.00006L6.9082 2.8985ZM4.51465 6.55182C4.4341 6.61218 4.34631 6.66193 4.25391 6.70123L4.16016 6.73736L1.75 7.5401V10.459L4.16016 11.2628L4.25391 11.2989C4.31551 11.3251 4.37502 11.356 4.43164 11.3917L4.51465 11.4483L7.25 13.4991V4.50006L4.51465 6.55182ZM9.60156 5.53033C9.89446 5.23755 10.3693 5.23748 10.6621 5.53033L13.1318 8.00006L15.541 5.59088C15.8339 5.29821 16.3087 5.29806 16.6016 5.59088C16.8944 5.8837 16.8942 6.35852 16.6016 6.65143L14.1924 9.06061L16.6729 11.5411C16.9654 11.834 16.9655 12.3088 16.6729 12.6016C16.38 12.8945 15.9042 12.8945 15.6113 12.6016L13.1309 10.1212L10.5908 12.6622C10.2979 12.9549 9.82313 12.955 9.53027 12.6622C9.23742 12.3693 9.23749 11.8945 9.53027 11.6016L12.0703 9.06061L9.60156 6.59088C9.30867 6.29799 9.30867 5.82323 9.60156 5.53033Z";
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 	videoElement = document.getElementById('vrVideo');
 	enterVrBtn = document.getElementById('enterVrBtn');
 	videoInfoDiv = document.getElementById('video-info');
@@ -100,10 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		console.warn("WARN_DOM: video-info div not found. Video info will not be displayed.");
 	}
 
-	enterVrBtn.disabled = true;
-	if (videoElement) {
-		videoElement.load();
-	}
+        enterVrBtn.disabled = true;
+        if (videoElement) {
+                await convertMVHEVCIfNeeded(videoElement);
+                videoElement.load();
+        }
 
 	if (navigator.xr) {
 		navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
